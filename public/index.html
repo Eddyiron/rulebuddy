@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>RuleBuddy</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+    footer {
+      position: sticky;
+      bottom: 0;
+    }
+    /* Lautsprechersymbol nur auf größeren Bildschirmen sichtbar */
+    #speakButton {
+      display: none;
+    }
+    @media (min-width: 768px) { /* Tablet und größere Geräte */
+      #speakButton {
+        display: inline-block;
+      }
+    }
+  </style>
+</head>
+<body class="bg-gray-100">
+
+  <!-- Hauptinhalt -->
+  <div class="flex-grow flex items-center justify-center">
+    <div class="max-w-lg w-full bg-white shadow-lg rounded-lg p-6">
+
+      <img src="images/logo.jpg" alt="RuleBuddy Logo" class="mx-auto mb-5 max-w-[60%] h-auto">
+
+      <!-- Spielauswahl -->
+      <div class="mb-6">
+        <label for="gameInput" class="block text-sm font-medium text-gray-700"></label>
+        <div class="bg-gray-200 rounded-lg shadow-md p-2 flex items-center">
+          <!-- Eingabefeld für das Spiel -->
+          <textarea id="gameInput" rows="1" placeholder="Spielname eingeben..."
+            class="flex-1 bg-transparent text-gray-800 focus:outline-none resize-none text-sm"></textarea>
+          <button id="startButton" class="text-blue-500 hover:text-blue-700">
+            ➤ <!-- Absendepfeil -->
+          </button>
+        </div>
+
+        <!-- Bereich für "Spiel nicht gefunden" -->
+        <div id="game-not-found" class="mt-4 hidden">
+          <p class="text-sm text-red-500">
+            Leider ist deine Spielanleitung nicht in der Datenbank. Möchtest du diese selber hochladen?
+          </p>
+          <!-- Plus-Button für den Upload -->
+          <button id="uploadButton" class="bg-gray-500 text-white font-bold p-2 rounded-full hover:bg-gray-700 focus:outline-none">
+            ➕ <!-- Plus-Symbol -->
+          </button>
+        </div>
+      </div>
+
+      <!-- Fragebereich -->
+      <div id="question-area" class="hidden mb-6">
+        <h2 id="selectedGame" class="text-lg font-semibold text-gray-800 mb-4 flex items-center hidden">
+          Dein gewähltes Spiel: <span id="gameName" class="ml-2"></span>
+          <button id="resetButton" class="bg-gray-200 p-0.5 rounded-full hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-offset-3 ml-6" title="Zurücksetzen">
+            ✖ <!-- Rotes X-Symbol -->
+          </button>
+        </h2>
+
+        <!-- Eingabefeld für die Frage -->
+        <div class="bg-gray-200 rounded-lg shadow-md p-2 flex items-center">
+          <!-- Eingabefeld -->
+          <textarea id="questionInput" rows="3" placeholder="Frage eingeben..."
+            class="flex-1 bg-transparent text-gray-800 focus:outline-none resize-none text-sm"></textarea>
+          <button id="askButton" class="text-green-500 hover:text-green-700">
+            ➤ <!-- Absendepfeil -->
+          </button>
+        </div>
+      </div>
+
+      <!-- Antwortbereich -->
+      <div>
+        <textarea id="answerOutput" rows="5" placeholder=""
+          class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm resize-none mb-4" readonly></textarea>
+
+        <div class="flex justify-between items-center">
+          <button id="speakButton" class="bg-gray-800 text-white font-bold p-2 rounded-full hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-offset-2">
+            🎧 <!-- Lautsprechersymbol -->
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-gray-800 text-white text-xs sm:text-sm py-4">
+    <div class="max-w-lg mx-auto flex justify-center space-x-6">
+      <a href="datenschutz.html" class="hover:underline">Datenschutz</a>
+      <a href="impressum.html" class="hover:underline">Impressum</a>
+      <a href="faq.html" class="hover:underline">FAQ</a>
+      <a href="nutzungsbedingungen.html" class="hover:underline">Nutzungsbedingungen</a>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
