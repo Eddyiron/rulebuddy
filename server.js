@@ -24,27 +24,51 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Funktion: Verfügbare Spiele aus dem Upload-Verzeichnis abrufen
 const getAvailableGames = () => {
   const uploadsDir = path.join(__dirname, 'public', 'uploads');
-  const files = fs.readdirSync(uploadsDir); // Lies alle Dateien im Verzeichnis
-  return files
-    .filter((file) => file.endsWith('.pdf')) // Nur PDFs berücksichtigen
-    .map((file) => path.basename(file, '.pdf')); // Dateiendung entfernen
+  const publishers = ['Hasbro', 'Ravensburger', 'Kosmos', 'Sonstige'];
+
+  let games = [];
+
+  // Hauptverzeichnis durchsuchen
+  fs.readdirSync(uploadsDir).forEach((file) => {
+    if (file.endsWith('.pdf')) {
+      games.push({ name: path.basename(file, '.pdf'), publisher: null });
+    }
+  });
+
+  // Unterordner durchsuchen
+  publishers.forEach((publisher) => {
+    const publisherDir = path.join(uploadsDir, publisher);
+    if (fs.existsSync(publisherDir) && fs.lstatSync(publisherDir).isDirectory()) {
+      fs.readdirSync(publisherDir).forEach((file) => {
+        if (file.endsWith('.pdf')) {
+          games.push({ name: path.basename(file, '.pdf'), publisher });
+        }
+      });
+    }
+  });
+
+  return games;
 };
+
+
+
+module.exports = getAvailableGames;
 
 // Route: Spielauswahl
 app.post('/select-game', (req, res) => {
   const { game } = req.body;
   const availableGames = getAvailableGames();
 
-  // Konvertiere alles zu Kleinschreibung
-  const lowerCaseGames = availableGames.map((g) => g.toLowerCase());
-  const lowerCaseGameInput = game.toLowerCase();
+  // Spiel suchen
+  const selectedGame = availableGames.find(g => g.name.toLowerCase() === game.toLowerCase());
 
-  if (lowerCaseGames.includes(lowerCaseGameInput)) {
+  if (selectedGame) {
     res.json({ message: `Das Spiel "${game}" wurde ausgewählt. Du kannst jetzt Fragen zu den Regeln stellen.` });
   } else {
     res.status(404).json({ message: `Die Anleitung für "${game}" ist nicht verfügbar.` });
   }
 });
+
 
 // Route: Autovervollständigung
 app.get('/autocomplete', (req, res) => {
@@ -54,9 +78,11 @@ app.get('/autocomplete', (req, res) => {
   }
 
   const availableGames = getAvailableGames(); // Hole alle verfügbaren Spiele
-  const filteredGames = availableGames.filter((game) =>
-    game.toLowerCase().includes(query)
-  ); // Filtere Spiele basierend auf dem Suchtext
+  const filteredGames = availableGames
+  .filter(game => game && game.name && typeof game.name === "string") // Absicherung gegen undefined
+  .filter(game => game.name.toLowerCase().includes(query));
+
+  // Filtere Spiele basierend auf dem Suchtext
 
   res.json(filteredGames); // Sende die gefilterte Liste zurück
 });
@@ -77,10 +103,25 @@ app.post('/ask-question', async (req, res) => {
       pdfText = pdfData.text;
     } else {
       // Anleitung aus dem Upload-Verzeichnis laden
-      const pdfPath = path.join(__dirname, 'public', 'uploads', `${game}.pdf`);
+      const publishers = ['Hasbro', 'Ravensburger', 'Kosmos', 'Sonstige'];
+      let pdfPath = path.join(__dirname, 'public', 'uploads', `${game}.pdf`);
+      
+      // 🔹 Falls die Datei im Hauptordner nicht gefunden wird, prüfe Unterordner
       if (!fs.existsSync(pdfPath)) {
-        return res.status(404).json({ answer: `Die Anleitung für "${game}" wurde nicht gefunden.` });
+          for (const publisher of publishers) {
+              const altPath = path.join(__dirname, 'public', 'uploads', publisher, `${game}.pdf`);
+              if (fs.existsSync(altPath)) {
+                  pdfPath = altPath;
+                  break;
+              }
+          }
       }
+      
+      // 🔹 Falls die Datei immer noch nicht gefunden wird, Fehlermeldung senden
+      if (!fs.existsSync(pdfPath)) {
+          return res.status(404).json({ answer: `Die Anleitung für "${game}" wurde nicht gefunden.` });
+      }
+      
 
       const pdfBuffer = fs.readFileSync(pdfPath);
       const pdfParse = require('pdf-parse');
