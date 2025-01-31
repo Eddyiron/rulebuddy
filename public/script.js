@@ -77,6 +77,29 @@ questionInput.addEventListener('input', () => {
     adjustTextareaHeight(questionInput); 
 });
 
+const clearQuestionButton = document.getElementById("clearQuestion");
+
+askButton.addEventListener("click", () => {
+    const question = questionInput.value.trim();
+
+    // Falls keine Frage eingegeben wurde, nichts tun
+    if (!question) return;
+
+    // 🔹 Zeige den "Frage löschen"-Button an
+    clearQuestionButton.classList.remove("hidden");
+});
+
+clearQuestionButton.addEventListener("click", (event) => {
+  event.preventDefault(); // Verhindert unerwünschtes Verhalten
+  questionInput.value = ""; // 🔹 Fragefeld leeren
+  answerOutput.value = ""; // 🔹 Antwortfeld leeren
+
+  // 🔹 Verstecke den Button wieder, da keine Frage mehr im Feld ist
+  clearQuestionButton.classList.add("hidden");
+});
+
+
+
 // 🔹 Spiel auswählen
 startButton.addEventListener('click', () => {
     const gameName = gameInput.value.trim();

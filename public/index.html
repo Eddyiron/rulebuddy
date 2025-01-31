@@ -65,11 +65,12 @@
 
       <!-- Fragebereich -->
       <div id="question-area" class="hidden mb-6">
-        <h2 id="selectedGame" class="text-lg font-semibold text-gray-800 mb-4 flex items-center hidden">
-          Dein gewähltes Spiel: <span id="gameName" class="ml-2"></span>
-          <button id="resetButton" class="bg-gray-200 p-0.5 rounded-full hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-offset-3 ml-6" title="Zurücksetzen">
+        <h2 id="selectedGame" class="text-sm font-semibold text-gray-600 mb-4 flex items-center hidden">
+           <span id="gameName" class="ml-2"></span> &nbsp;zurücksetzen
+          <button id="resetButton" class="bg-gray-200 p-0.5 rounded-full hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-offset-1 ml-5" title="Zurücksetzen">
             ✖ <!-- Rotes X-Symbol -->
           </button>
+          
         </h2>
 
         <!-- Eingabefeld für die Frage -->
@@ -80,7 +81,11 @@
           <button id="askButton" class="text-green-500 hover:text-green-700">
             ➤ <!-- Absendepfeil -->
           </button>
+                  
         </div>
+        <button id="clearQuestion" class="hidden mt-1 px-2 py-1 bg-gray-200 text-gray-700 text-sm rounded hover:bg-red-300 hover:text-white">
+          Frage löschen
+      </button>
       </div>
 
       <!-- Antwortbereich -->
