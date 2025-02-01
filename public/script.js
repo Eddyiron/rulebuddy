@@ -77,6 +77,15 @@ questionInput.addEventListener('input', () => {
     adjustTextareaHeight(questionInput); 
 });
 
+// 🔹 Enter-Taste sendet die Frage & verhindert Zeilenumbruch
+questionInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' && !event.shiftKey) { // Shift + Enter erlaubt Zeilenumbruch
+        event.preventDefault(); // Verhindert Zeilenumbruch
+        askButton.click(); // Simuliere Klick auf "Frage stellen"
+    }
+});
+
+
 const clearQuestionButton = document.getElementById("clearQuestion");
 
 askButton.addEventListener("click", () => {
@@ -177,6 +186,13 @@ function showSuggestions(suggestions) {
 // 🔹 Event: Eingabe im Spielefeld
 gameInput.addEventListener('input', () => {
     const query = gameInput.value.trim();
+
+    // 🔹 Falls ein neues Spiel eingegeben wird, lösche die temporäre PDF
+    if (uploadedManual) {
+        uploadedManual = null;
+        console.log("Temporäre PDF wurde gelöscht.");
+    }
+
     if (query.length < 3) {
         suggestionsList.style.display = 'none';
         updateLogo(null);
@@ -191,6 +207,7 @@ gameInput.addEventListener('input', () => {
         })
         .catch((error) => console.error("Fehler bei der Autovervollständigung:", error));
 });
+
 
 // 🔹 Event: Vorschlagsliste ausblenden, wenn außerhalb geklickt wird
 document.addEventListener('click', (event) => {
@@ -208,14 +225,6 @@ gameInput.addEventListener('keydown', (event) => {
 });
 
 // 🔹 Enter-Funktion für Frage stellen
-questionInput.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') {
-        event.preventDefault();
-        askButton.click();
-    }
-});
-
-// 🔹 Datei hochladen
 uploadButton.addEventListener('click', () => {
     const uploadInput = document.createElement('input');
     uploadInput.type = 'file';
@@ -226,10 +235,11 @@ uploadButton.addEventListener('click', () => {
         if (file) {
             const reader = new FileReader();
             reader.onload = () => {
-                uploadedManual = btoa(reader.result);
-                alert('Die Anleitung wurde erfolgreich hochgeladen.');
+                uploadedManual = btoa(reader.result); 
+                selectedGame = gameInput.value.trim(); // 🔹 Setzt das Spiel aus dem Eingabefeld!
+                alert(`Die Anleitung für "${selectedGame}" wurde erfolgreich hochgeladen.`);
                 gameNotFoundDiv.classList.add('hidden');
-                questionArea.style.display = 'block';
+                questionArea.style.display = 'block'; 
             };
             reader.readAsBinaryString(file);
         }
@@ -237,6 +247,8 @@ uploadButton.addEventListener('click', () => {
 
     uploadInput.click();
 });
+
+uploadButton.addEventListener
 
 // 🔹 Spiel zurücksetzen
 resetButton.addEventListener('click', () => {
@@ -260,35 +272,36 @@ resetButton.addEventListener('click', () => {
 
 
 askButton.addEventListener('click', () => {
-  const question = questionInput.value.trim();
-  
-  // 🔹 Falls kein Spiel ausgewählt wurde, abbrechen
-  if (!selectedGame) {
-      alert("Bitte wähle zuerst ein Spiel aus.");
-      return;
-  }
+    const question = questionInput.value.trim();
 
-  if (question) {
-      fetch('/ask-question', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-              game: selectedGame,
-              question,
-              manual: uploadedManual, 
-          }),
-      })
-      .then((res) => res.json())
-      .then((data) => {
-          answerOutput.value = data.answer || 'Keine Antwort erhalten.';
-          adjustTextareaHeight(answerOutput);
-      })
-      .catch((error) => {
-          console.error('Fehler bei der Anfrage:', error);
-          answerOutput.value = 'Es gab ein Problem bei der Anfrage.';
-          adjustTextareaHeight(answerOutput);
-      });
-  } else {
-      alert('Bitte gib eine Frage ein.');
-  }
+    // 🔹 Falls kein Spiel ausgewählt wurde und keine temporäre PDF vorhanden ist, abbrechen
+    if (!selectedGame && !uploadedManual) {
+        alert("Bitte wähle zuerst ein Spiel aus.");
+        return;
+    }
+
+    if (question) {
+        fetch('/ask-question', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                game: selectedGame || gameInput.value.trim(), // 🔹 Falls `selectedGame` leer ist, verwende das Eingabefeld
+                question,
+                manual: uploadedManual, 
+            }),
+        })
+        .then((res) => res.json())
+        .then((data) => {
+            answerOutput.value = data.answer || 'Keine Antwort erhalten.';
+            adjustTextareaHeight(answerOutput);
+        })
+        .catch((error) => {
+            console.error('Fehler bei der Anfrage:', error);
+            answerOutput.value = 'Es gab ein Problem bei der Anfrage.';
+            adjustTextareaHeight(answerOutput);
+        });
+    } else {
+        alert('Bitte gib eine Frage ein.');
+    }
 });
+
