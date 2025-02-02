@@ -135,9 +135,10 @@ app.post('/ask-question', async (req, res) => {
       {
         model: 'gpt-3.5-turbo',
         messages: [
-          { role: 'system', content: `Du bist ein Bot, der Fragen zu Spielanleitungen beantwortet.` },
-          { role: 'user', content: `Das folgende ist die Anleitung für das Spiel ${game}:\n${pdfText}\n\nBeantworte die folgende Frage basierend auf dieser Anleitung: "${question}"` },
-        ],
+          { role: 'system', content: `Du bist ein Bot, der Fragen zu Spielanleitungen beantwortet. Antworte in der Sprache der gestellten Frage.` },
+          { role: 'user', content: `Das folgende ist die Anleitung für das Spiel ${game}:\n${pdfText}\n\nBeantworte die folgende Frage in der gleichen Sprache: "${question}"` },
+      ],
+      
         temperature: 0.7,
       },
       {
@@ -172,7 +173,13 @@ app.post('/upload-manual', upload.single('manual'), (req, res) => {
     return res.status(400).json({ success: false, message: 'Keine Datei hochgeladen.' });
   }
 
-  const { game } = req.body;
+  const { game, question, manual } = req.body;
+
+// 🔹 Sprache der Frage automatisch erkennen
+const detectLanguage = require('langdetect').detect;
+const questionLanguage = detectLanguage(question);
+console.log(`Erkannte Sprache: ${questionLanguage}`);
+
   const manualBuffer = req.file.buffer;
 
   if (game && manualBuffer) {

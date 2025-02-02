@@ -1,3 +1,46 @@
+const userLanguage = navigator.language || navigator.userLanguage;
+console.log(`Erkannte Browsersprache: ${userLanguage}`);
+
+const translations = {
+    "de": {
+        "gamePlaceholder": "Spielname eingeben...",
+        "questionPlaceholder": "Frage eingeben...",
+        "resetText": "Zurücksetzen",
+        "deleteQuestion": "Frage löschen",
+    },
+    "en": {
+        "gamePlaceholder": "Enter game name...",
+        "questionPlaceholder": "Enter your question...",
+        "resetText": "Reset",
+        "deleteQuestion": "Clear Question",
+    },
+    "fr": {
+        "gamePlaceholder": "Entrez le nom du jeu...",
+        "questionPlaceholder": "Entrez votre question...",
+        "resetText": "Réinitialiser",
+        "deleteQuestion": "Effacer la question",
+    },
+    "es": {
+        "gamePlaceholder": "Ingrese el nombre del juego...",
+        "questionPlaceholder": "Ingrese su pregunta...",
+        "resetText": "Restablecer",
+        "deleteQuestion": "Borrar pregunta",
+    }
+};
+
+// 🔹 Funktion zum Setzen der UI-Sprache
+function setUILanguage(lang) {
+    if (!translations[lang]) lang = "en"; // Fallback auf Englisch
+
+    document.getElementById("gameInput").setAttribute("placeholder", translations[lang]["gamePlaceholder"]);
+    document.getElementById("questionInput").setAttribute("placeholder", translations[lang]["questionPlaceholder"]);
+    document.getElementById("resetButton").textContent = translations[lang]["resetText"];
+    document.getElementById("clearQuestion").textContent = translations[lang]["deleteQuestion"];
+}
+
+// 🔹 Automatisch die Sprache setzen
+setUILanguage(userLanguage.substring(0, 2));
+
 const gameInput = document.getElementById('gameInput');
 const startButton = document.getElementById('startButton');
 const micButton = document.getElementById('micButton'); 
