@@ -154,35 +154,68 @@ clearQuestionButton.addEventListener("click", (event) => {
 
 // 🔹 Spiel auswählen
 startButton.addEventListener('click', () => {
-    const gameName = gameInput.value.trim();
-    if (gameName) {
-        fetch('/select-game', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ game: gameName }),
-        })
-        .then((res) => res.json())
-        .then((data) => {
-            if (data.message.includes('ausgewählt')) {
-                selectedGame = gameName;
-                document.getElementById('gameName').textContent = gameName;
-                selectedGameElement.classList.remove('hidden');
-                resetButton.classList.remove('hidden'); 
-                questionArea.style.display = 'block'; 
-                gameNotFoundDiv.classList.add('hidden'); 
-                gameInput.disabled = true; 
-                startButton.disabled = true;
-            } else {
-                gameNotFoundDiv.classList.remove('hidden'); 
+    let gameName = gameInput.value.trim();
+    if (!gameName) return;
+
+    fetch(`/select-game`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ game: gameName }),
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.message.includes('ausgewählt')) {
+            selectedGame = gameName;
+            document.getElementById('gameName').textContent = gameName;
+            selectedGameElement.classList.remove('hidden');
+            resetButton.classList.remove('hidden');
+            questionArea.style.display = 'block';
+            gameNotFoundDiv.classList.add('hidden');
+            gameInput.disabled = true;
+            startButton.disabled = true;
+
+            // 🔹 Info-Container anzeigen
+            const infoContainer = document.getElementById("infoContainer");
+            infoContainer.classList.remove("hidden");
+
+            // 🔹 Logo aktualisieren
+            const gameLogo = document.getElementById("gameLogo");
+            if (data.logo) {
+                gameLogo.src = data.logo;
             }
-        })
-        .catch((error) => {
-            console.error('Fehler bei der Spielauswahl:', error);
-        });
-    } else {
-        alert('Bitte gib einen gültigen Spielnamen ein.');
-    }
+
+            // 🔹 Hersteller-Website setzen
+            const manufacturerLink = document.getElementById("manufacturerLink");
+            if (data.website) {
+                manufacturerLink.href = data.website;
+                manufacturerLink.textContent = data.website;
+                manufacturerLink.classList.remove("hidden");
+            } else {
+                manufacturerLink.classList.add("hidden");
+            }
+
+            // 🔹 Werbung setzen
+            const adContainer = document.getElementById("adContainer").querySelector("a");
+            const adImage = adContainer.querySelector("img");
+            if (data.ad) {
+                console.log(`[DEBUG] Werbebild für ${gameName}: ${data.ad}`);
+                adContainer.href = data.adLink;
+                adImage.src = data.ad;
+            } else {
+                console.warn(`[WARN] Keine Werbung für ${gameName} gefunden.`);
+                adContainer.href = "#";
+            }
+        } else {
+            gameNotFoundDiv.classList.remove('hidden');
+        }
+    })
+    .catch(error => console.error('Fehler bei der Spielauswahl:', error));
 });
+
+
+
+
+
 
 // 🔹 Vorschlagsliste für Autovervollständigung
 const suggestionsList = document.createElement('ul');
@@ -296,8 +329,6 @@ uploadButton.addEventListener
 // 🔹 Spiel zurücksetzen
 resetButton.addEventListener('click', () => {
     selectedGame = null;
-    updateLogo(null); // Setzt das Standard-Logo
-    uploadedManual = null;
     gameInput.value = '';
     questionInput.value = '';
     answerOutput.value = '';
@@ -307,11 +338,17 @@ resetButton.addEventListener('click', () => {
     gameNotFoundDiv.classList.add('hidden');
     gameInput.disabled = false;
     startButton.disabled = false;
-    micButton.classList.remove('hidden');
-    startButton.classList.add('hidden');
-    micQuestionButton.classList.remove('hidden');
-    askButton.classList.add('hidden');
+
+    // 🔹 Info-Container ausblenden
+    const infoContainer = document.getElementById("infoContainer");
+    infoContainer.classList.add("hidden");
+
+    // 🔹 Hersteller-Link leeren
+    document.getElementById("manufacturerLink").href = "#";
+    document.getElementById("manufacturerLink").textContent = "";
 });
+
+
 
 
 askButton.addEventListener('click', () => {
@@ -347,4 +384,11 @@ askButton.addEventListener('click', () => {
         alert('Bitte gib eine Frage ein.');
     }
 });
+
+fetch('/log-browser-language', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ language: userLanguage.substring(0, 2) })
+});
+
 

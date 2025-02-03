@@ -1,0 +1,18 @@
+{
+    "Ravensburger": {
+        "website": "https://www.ravensburger.de",
+        "ad_link": "https://www.ravensburger.de" 
+    },
+    "Hasbro": {
+        "website": "https://www.hasbro.com",
+        "ad_link": "https://www.hasbro.com"
+    },
+    "Kosmos": {
+        "website": "https://www.kosmos.de",
+        "ad_link": "https://www.kosmos.de"
+    },
+    "Sonstige": {
+        "website": "https://www.spiele-offiziell.de",
+        "ad_link": "https://www.spiele-offiziell.de"
+    }
+}

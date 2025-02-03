@@ -8,6 +8,49 @@ const multer = require('multer');
 const app = express();
 const port = 3000;
 
+const logFile = path.join(__dirname, 'logs.json');
+
+const basicAuth = require('express-basic-auth');
+
+app.use(basicAuth({
+    users: { "tester": "alfalfa" }, // Nutzername & Passwort setzen
+    challenge: true, // Browser fordert automatisch zur Eingabe auf
+    unauthorizedResponse: 'Zugriff verweigert'
+}));
+
+
+// Funktion, um Logs zu speichern
+const updateLog = (category, key) => {
+    let logs = {};
+    if (fs.existsSync(logFile)) {
+        logs = JSON.parse(fs.readFileSync(logFile, 'utf8'));
+    }
+
+    if (!logs[category]) {
+        logs[category] = {};
+    }
+
+    if (!logs[category][key]) {
+        logs[category][key] = 0;
+    }
+
+    logs[category][key]++;
+
+    fs.writeFileSync(logFile, JSON.stringify(logs, null, 2));
+};
+
+const geoip = require('geoip-lite');
+
+app.post('/log-country', (req, res) => {
+    const { ip } = req.body;
+    if (!ip) return res.sendStatus(400);
+
+    const geo = geoip.lookup(ip);
+    const country = geo ? geo.country : 'Unbekannt';
+
+    updateLog('zugriff_land', country);
+    res.sendStatus(200);
+});
 
 
 // Middleware erweitern, um größere Payloads zu verarbeiten
@@ -30,25 +73,26 @@ const getAvailableGames = () => {
 
   // Hauptverzeichnis durchsuchen
   fs.readdirSync(uploadsDir).forEach((file) => {
-    if (file.endsWith('.pdf')) {
-      games.push({ name: path.basename(file, '.pdf'), publisher: null });
-    }
+      if (file.toLowerCase().endsWith('.pdf')) {
+          games.push({ name: path.basename(file, path.extname(file)), publisher: null });
+      }
   });
 
   // Unterordner durchsuchen
   publishers.forEach((publisher) => {
-    const publisherDir = path.join(uploadsDir, publisher);
-    if (fs.existsSync(publisherDir) && fs.lstatSync(publisherDir).isDirectory()) {
-      fs.readdirSync(publisherDir).forEach((file) => {
-        if (file.endsWith('.pdf')) {
-          games.push({ name: path.basename(file, '.pdf'), publisher });
-        }
-      });
-    }
+      const publisherDir = path.join(uploadsDir, publisher);
+      if (fs.existsSync(publisherDir) && fs.lstatSync(publisherDir).isDirectory()) {
+          fs.readdirSync(publisherDir).forEach((file) => {
+              if (file.toLowerCase().endsWith('.pdf')) {
+                  games.push({ name: path.basename(file, path.extname(file)), publisher });
+              }
+          });
+      }
   });
 
   return games;
 };
+
 
 
 
@@ -57,17 +101,56 @@ module.exports = getAvailableGames;
 // Route: Spielauswahl
 app.post('/select-game', (req, res) => {
   const { game } = req.body;
-  const availableGames = getAvailableGames();
+  if (!game) {
+      return res.status(400).json({ message: 'Kein Spiel angegeben.' });
+  }
 
-  // Spiel suchen
+  const availableGames = getAvailableGames();
   const selectedGame = availableGames.find(g => g.name.toLowerCase() === game.toLowerCase());
 
   if (selectedGame) {
-    res.json({ message: `Das Spiel "${game}" wurde ausgewählt. Du kannst jetzt Fragen zu den Regeln stellen.` });
+      const publisher = selectedGame.publisher || 'Sonstige';
+      const logoPath = `/uploads/${publisher}/img/logo.png`;
+      const adPath = `/uploads/${publisher}/ad/ad.png`; // 🔹 Werbebild setzen
+
+      // 🔹 Hersteller-URL & Werbe-URL aus JSON abrufen
+      let manufacturersData = {};
+      try {
+          const data = fs.readFileSync(path.join(__dirname, 'public', 'manufacturers.json'), 'utf8');
+          manufacturersData = JSON.parse(data);
+      } catch (error) {
+          console.error("Fehler beim Laden der Hersteller-URLs:", error);
+      }
+
+      const manufacturerInfo = manufacturersData[publisher] || {};
+      const manufacturerUrl = manufacturerInfo.website || "https://www.spiele-offiziell.de";
+      const adLink = manufacturerInfo.ad_link || "https://www.spiele-offiziell.de/angebote";
+
+      // 🔹 Prüfen, ob das Werbebild existiert
+      const fullAdPath = path.join(__dirname, 'public', adPath);
+      if (!fs.existsSync(fullAdPath)) {
+          console.warn(`⚠️ Werbung für ${publisher} nicht gefunden. Verwende Standardbild.`);
+          adPath = "/uploads/default_ad.png"; // Standardwerbung setzen, falls nicht vorhanden
+      }
+
+      res.json({ 
+          message: `Das Spiel "${selectedGame.name}" wurde ausgewählt.`,
+          logo: logoPath,
+          ad: adPath,
+          adLink: adLink,
+          website: manufacturerUrl
+      });
   } else {
-    res.status(404).json({ message: `Die Anleitung für "${game}" ist nicht verfügbar.` });
+      res.status(404).json({ message: `Die Anleitung für "${game}" ist nicht verfügbar.` });
   }
 });
+
+
+
+
+
+
+
 
 
 // Route: Autovervollständigung
@@ -121,7 +204,6 @@ app.post('/ask-question', async (req, res) => {
       if (!fs.existsSync(pdfPath)) {
           return res.status(404).json({ answer: `Die Anleitung für "${game}" wurde nicht gefunden.` });
       }
-      
 
       const pdfBuffer = fs.readFileSync(pdfPath);
       const pdfParse = require('pdf-parse');
@@ -152,6 +234,10 @@ app.post('/ask-question', async (req, res) => {
     const answer = response.data.choices[0].message.content || 'Keine Antwort erhalten.';
     console.log(`[ASK-QUESTION] Antwort von OpenAI: ${answer}`);
 
+    // 🔹 Frage und Antwort in logs.json speichern
+    const logEntry = { spiel: game, frage: question, antwort: answer };
+    updateLog('fragen_und_antworten', JSON.stringify(logEntry));
+
     res.json({ answer });
   } catch (error) {
     console.error('[ASK-QUESTION] Fehler bei der Verarbeitung der Frage:', error.message);
@@ -161,39 +247,59 @@ app.post('/ask-question', async (req, res) => {
 
 
 
+
 // Route: Temporäre Anleitung hochladen
 const upload = multer({ storage: multer.memoryStorage() });
 
 app.post('/upload-manual', upload.single('manual'), (req, res) => {
-  console.log('Upload-Route aufgerufen.');
-  console.log('Body:', req.body);
-  console.log('Datei:', req.file);
+    console.log('Upload-Route aufgerufen.');
+    console.log('Body:', req.body);
+    console.log('Datei:', req.file);
 
-  if (!req.file) {
-    return res.status(400).json({ success: false, message: 'Keine Datei hochgeladen.' });
-  }
+    if (!req.file) {
+        return res.status(400).json({ success: false, message: 'Keine Datei hochgeladen.' });
+    }
 
-  const { game, question, manual } = req.body;
+    const { game, question } = req.body;
+
+    // 🔹 Sprache der Frage automatisch erkennen
+    const questionLanguage = question ? detectLanguage(question) : 'Unbekannt';
+    console.log(`Erkannte Sprache: ${questionLanguage}`);
+
+    // Datei als temporären Speicher in der Session ablegen
+    const manualBuffer = req.file.buffer;
+
+    if (game && manualBuffer) {
+        req.session = req.session || {};
+        req.session.tempManuals = req.session.tempManuals || {};
+        req.session.tempManuals[game.toLowerCase()] = manualBuffer;
+
+        console.log('Anleitung erfolgreich gespeichert.');
+        return res.json({ success: true, message: `Anleitung für "${game}" wurde hochgeladen.` });
+    } else {
+        console.log('Ungültige Anfrage.');
+        return res.status(400).json({ success: false, message: 'Ungültige Anfrage.' });
+    }
+});
+
 
 // 🔹 Sprache der Frage automatisch erkennen
 const detectLanguage = require('langdetect').detect;
-const questionLanguage = detectLanguage(question);
-console.log(`Erkannte Sprache: ${questionLanguage}`);
 
-  const manualBuffer = req.file.buffer;
+app.post('/ask-question', async (req, res) => {
+    const { game, question } = req.body;
 
-  if (game && manualBuffer) {
-    req.session = req.session || {};
-    req.session.tempManuals = req.session.tempManuals || {};
-    req.session.tempManuals[game.toLowerCase()] = manualBuffer;
+    if (!question) {
+        return res.status(400).json({ answer: 'Bitte eine Frage stellen.' });
+    }
 
-    console.log('Anleitung erfolgreich gespeichert.');
-    res.json({ success: true });
-  } else {
-    console.log('Ungültige Anfrage.');
-    res.status(400).json({ success: false, message: 'Ungültige Anfrage.' });
-  }
+    const language = detectLanguage(question);
+    updateLog('fragen_sprache', language);
+    updateLog('gestellte_fragen', `${game}: ${question}`);
+
+    res.json({ answer: 'Frage wurde geloggt.' });
 });
+
 
 // Fehlerbehandlung für nicht gefundene Routen
 app.use((req, res) => {
@@ -211,4 +317,14 @@ app.listen(port, () => {
 
 app.use(bodyParser.json({ limit: '50mb' })); // JSON-Payload auf 50 MB erhöhen
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true })); // URL-encoded Daten auf 50 MB erhöhen
+
+app.get('/logs', (req, res) => {
+  if (fs.existsSync(logFile)) {
+      const logs = JSON.parse(fs.readFileSync(logFile, 'utf8'));
+      res.json(logs);
+  } else {
+      res.json({ message: 'Noch keine Logs vorhanden.' });
+  }
+});
+
 
