@@ -111,7 +111,7 @@ app.post('/select-game', (req, res) => {
   if (selectedGame) {
       const publisher = selectedGame.publisher || 'Sonstige';
       const logoPath = `/uploads/${publisher}/img/logo.png`;
-      const adPath = `/uploads/${publisher}/ad/ad.png`; // 🔹 Werbebild setzen
+      let adPath = `/uploads/${publisher}/ad/ad.png`; // 🔹 Werbebild setzen
 
       // 🔹 Hersteller-URL & Werbe-URL aus JSON abrufen
       let manufacturersData = {};

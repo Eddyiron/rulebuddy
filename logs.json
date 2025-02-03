@@ -13,6 +13,7 @@
   "fragen_und_antworten": {
     "{\"spiel\":\"Catan Städte Und Ritter\",\"frage\":\"wann gibt es einen ritter\",\"antwort\":\"Es gibt einen Ritter im Spiel Catan Städte Und Ritter, wenn Spieler mit Burg 1 oder Burg 2 ihre Ritter aktivieren, aufwerten, versetzen oder vertreiben.\"}": 1,
     "{\"spiel\":\"labyrinth\",\"frage\":\"wann habe ich gewonnen\",\"antwort\":\"Du hast das Spiel \\\"Labyrinth\\\" gewonnen, wenn du als erster Spieler alle Ziele erreicht hast, die auf deinen Bildkarten vorgegeben sind und deine Figur wieder auf dein Startfeld gezogen hast.\"}": 1,
-    "{\"spiel\":\"Catan\",\"frage\":\"wann gewonnen\",\"antwort\":\"Das Spiel endet, wenn ein Spieler mindestens 10 Siegpunkte erreicht hat. Derjenige, der zuerst die 10 Siegpunkte in seinem Zug erreicht oder besitzt, gewinnt das Spiel.\"}": 1
+    "{\"spiel\":\"Catan\",\"frage\":\"wann gewonnen\",\"antwort\":\"Das Spiel endet, wenn ein Spieler mindestens 10 Siegpunkte erreicht hat. Derjenige, der zuerst die 10 Siegpunkte in seinem Zug erreicht oder besitzt, gewinnt das Spiel.\"}": 1,
+    "{\"spiel\":\"Monopoly\",\"frage\":\"wie viele spieler\",\"antwort\":\"Das Spiel Monopoly kann mit 2 bis 6 Spielern gespielt werden.\"}": 1
   }
 }
